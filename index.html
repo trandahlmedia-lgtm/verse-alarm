@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0A0A0B">
+<title>First Word — the alarm you answer with Scripture</title>
+<style>
+:root{ --black:#0A0A0B; --gold:#E6B84C; --gold-soft:rgba(230,184,76,.7); --white:#F5F2EA; --dim:rgba(245,242,234,.5); --faint:rgba(245,242,234,.25); --green:#4CAF6E; }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{background:var(--black);color:var(--white);font-family:-apple-system,'Segoe UI',system-ui,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none;}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;}
+.screen.on{display:flex;}
+
+/* SETUP */
+.logo{font-size:15px;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;}
+.tagline{color:var(--dim);font-size:14px;margin-bottom:36px;}
+input[type=time]{background:#131316;border:1px solid rgba(245,242,234,.15);border-radius:16px;color:var(--white);font-size:44px;font-weight:700;padding:12px 22px;text-align:center;outline:none;color-scheme:dark;}
+.hint{color:var(--faint);font-size:12.5px;margin-top:10px;max-width:320px;line-height:1.5;}
+.btn{margin-top:30px;background:linear-gradient(135deg,var(--gold),#C9952B);color:#1A1408;font-weight:800;font-size:17px;letter-spacing:.04em;border:none;border-radius:16px;padding:17px 44px;cursor:pointer;}
+.btn:active{transform:scale(.97);}
+.btn.ghost{background:none;border:1px solid rgba(245,242,234,.2);color:var(--dim);font-size:13px;padding:10px 20px;margin-top:14px;font-weight:600;}
+.streakline{margin-top:34px;color:var(--dim);font-size:13.5px;}
+.streakline b{color:var(--gold);}
+
+/* NIGHT */
+#night{background:#000;cursor:pointer;}
+.nclock{font-size:19vw;font-weight:200;color:rgba(245,242,234,.28);letter-spacing:.02em;font-variant-numeric:tabular-nums;}
+.nsub{color:rgba(245,242,234,.14);font-size:14px;margin-top:14px;letter-spacing:.12em;text-transform:uppercase;}
+.nsub b{color:rgba(230,184,76,.4);font-weight:600;}
+.ndisarm{position:fixed;bottom:26px;color:rgba(245,242,234,.12);font-size:12px;}
+
+/* RINGING / LISTENING */
+#ring{background:radial-gradient(circle at 50% 20%,#241c08 0%,#0A0A0B 65%);}
+.sunrise{font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:22px;animation:pulse 1.1s ease-in-out infinite;}
+@keyframes pulse{50%{opacity:.35;}}
+.vref{color:var(--gold-soft);font-size:16px;font-weight:700;letter-spacing:.06em;margin-bottom:14px;}
+.vtext{font-family:Georgia,'Times New Roman',serif;font-size:clamp(21px,5.8vw,30px);line-height:1.5;max-width:560px;color:var(--white);}
+.vtext .hit{color:var(--gold);}
+#micbtn{margin-top:34px;}
+.transcript{margin-top:18px;min-height:44px;color:var(--dim);font-size:14.5px;max-width:520px;line-height:1.45;font-style:italic;}
+.meter{width:min(340px,80vw);height:6px;background:rgba(245,242,234,.1);border-radius:99px;margin-top:12px;overflow:hidden;}
+.meter i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#C9952B);border-radius:99px;transition:width .25s;}
+.tries{color:var(--faint);font-size:12px;margin-top:10px;}
+.grace{position:fixed;bottom:22px;color:rgba(245,242,234,.18);font-size:11.5px;padding:10px;}
+
+/* WON */
+#won{background:radial-gradient(circle at 50% 30%,#1d2a14 0%,#0A0A0B 70%);}
+.check{font-size:52px;margin-bottom:16px;}
+.wonh{font-size:24px;font-weight:800;margin-bottom:8px;}
+.wonsub{color:var(--dim);font-size:15px;max-width:340px;line-height:1.6;}
+.streakbig{margin-top:26px;background:rgba(230,184,76,.1);border:1px solid rgba(230,184,76,.35);border-radius:16px;padding:14px 30px;font-size:15px;}
+.streakbig b{color:var(--gold);font-size:22px;}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1c1c20;border:1px solid rgba(230,184,76,.4);color:var(--white);padding:11px 20px;border-radius:12px;font-size:13.5px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:88vw;z-index:99;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup" class="screen on">
+  <div class="logo">✝ First Word</div>
+  <div class="tagline">The alarm you can only silence by reading God's Word out loud.</div>
+  <input type="time" id="timeInput" value="06:30">
+  <button class="btn" id="armBtn">Arm the alarm</button>
+  <button class="btn ghost" id="testBtn">⚡ 15-second test</button>
+  <div class="hint">Before bed: plug the phone in, arm it, and leave it <b>face-up with this page open</b> — the screen stays on, dimmed. Silent switch OFF, volume up.</div>
+  <div class="streakline" id="streakLine"></div>
+</div>
+
+<!-- NIGHT -->
+<div id="night" class="screen">
+  <div class="nclock" id="nclock">–:––</div>
+  <div class="nsub">armed for <b id="ntarget">6:30 AM</b> · tomorrow's verse is chosen</div>
+  <div class="ndisarm">tap anywhere twice to disarm</div>
+</div>
+
+<!-- RINGING -->
+<div id="ring" class="screen">
+  <div class="sunrise" id="ringState">⏰ Rise — read to silence</div>
+  <div class="vref" id="vref"></div>
+  <div class="vtext" id="vtext"></div>
+  <button class="btn" id="micbtn">🎤 I'm up — read it aloud</button>
+  <div class="transcript" id="transcript"></div>
+  <div class="meter"><i id="meterFill"></i></div>
+  <div class="tries" id="tries"></div>
+  <div class="grace" id="graceBtn">✝</div>
+</div>
+
+<!-- WON -->
+<div id="won" class="screen">
+  <div class="check">🌅</div>
+  <div class="wonh">The Word was your first word.</div>
+  <div class="wonsub" id="wonVerse"></div>
+  <div class="streakbig">Streak: <b id="streakNum">1</b> mornings</div>
+  <button class="btn ghost" id="doneBtn" style="margin-top:26px;">Done — start the day</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= VERSES — World English Bible (public domain) ================= */
+const VERSES=[
+{ref:"Psalm 118:24",text:"This is the day that the Lord has made. We will rejoice and be glad in it."},
+{ref:"Lamentations 3:22–23",text:"It is because of the Lord's loving kindnesses that we are not consumed, because his mercies do not fail. They are new every morning. Great is your faithfulness."},
+{ref:"Philippians 4:13",text:"I can do all things through Christ who strengthens me."},
+{ref:"Joshua 1:9",text:"Be strong and courageous. Do not be afraid. Do not be dismayed, for the Lord your God is with you wherever you go."},
+{ref:"Proverbs 3:5–6",text:"Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make your paths straight."},
+{ref:"Isaiah 40:31",text:"Those who wait for the Lord will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint."},
+{ref:"Psalm 23:1",text:"The Lord is my shepherd. I shall lack nothing."},
+{ref:"Matthew 6:33",text:"Seek first God's Kingdom and his righteousness, and all these things will be given to you as well."},
+{ref:"Romans 8:28",text:"We know that all things work together for good for those who love God, for those who are called according to his purpose."},
+{ref:"Psalm 46:10",text:"Be still, and know that I am God. I will be exalted among the nations. I will be exalted in the earth."},
+{ref:"Ephesians 2:8–9",text:"For by grace you have been saved through faith, and that not of yourselves. It is the gift of God, not of works, that no one would boast."},
+{ref:"Psalm 121:1–2",text:"I will lift up my eyes to the hills. Where does my help come from? My help comes from the Lord, who made heaven and earth."},
+{ref:"John 8:12",text:"I am the light of the world. He who follows me will not walk in the darkness, but will have the light of life."},
+{ref:"Galatians 6:9",text:"Let us not be weary in doing good, for we will reap in due season if we do not give up."},
+{ref:"Psalm 34:8",text:"Oh taste and see that the Lord is good. Blessed is the man who takes refuge in him."},
+{ref:"Matthew 11:28",text:"Come to me, all you who labor and are heavily burdened, and I will give you rest."},
+{ref:"2 Timothy 1:7",text:"For God did not give us a spirit of fear, but of power, love, and self-control."},
+{ref:"Psalm 90:14",text:"Satisfy us in the morning with your loving kindness, that we may rejoice and be glad all our days."},
+{ref:"James 1:5",text:"If any of you lacks wisdom, let him ask of God, who gives to all liberally and without reproach, and it will be given to him."},
+{ref:"Isaiah 41:10",text:"Do not be afraid, for I am with you. Do not be dismayed, for I am your God. I will strengthen you. Yes, I will help you."},
+{ref:"Psalm 27:1",text:"The Lord is my light and my salvation. Whom shall I fear? The Lord is the strength of my life. Of whom shall I be afraid?"},
+{ref:"Colossians 3:23",text:"Whatever you do, work heartily, as for the Lord and not for men."},
+{ref:"Proverbs 16:3",text:"Commit your deeds to the Lord, and your plans shall succeed."},
+{ref:"Psalm 143:8",text:"Cause me to hear your loving kindness in the morning, for I trust in you. Cause me to know the way in which I should walk, for I lift up my soul to you."},
+{ref:"Romans 12:2",text:"Do not be conformed to this world, but be transformed by the renewing of your mind, so that you may prove what is the good, well-pleasing, and perfect will of God."},
+{ref:"1 Corinthians 16:13",text:"Watch. Stand firm in the faith. Be courageous. Be strong. Let all that you do be done in love."},
+{ref:"Psalm 5:3",text:"Lord, in the morning you will hear my voice. In the morning I will lay my requests before you, and will watch expectantly."},
+{ref:"Micah 6:8",text:"He has shown you, O man, what is good. What does the Lord require of you, but to act justly, to love mercy, and to walk humbly with your God?"},
+{ref:"John 16:33",text:"In the world you have trouble, but cheer up. I have overcome the world."},
+{ref:"Psalm 37:4",text:"Also delight yourself in the Lord, and he will give you the desires of your heart."},
+{ref:"Hebrews 12:1",text:"Let us also lay aside every weight and the sin which so easily entangles us, and let us run with perseverance the race that is set before us."},
+{ref:"Zephaniah 3:17",text:"The Lord your God is among you, a mighty one who will save. He will rejoice over you with joy. He will rest in his love."},
+{ref:"Psalm 19:14",text:"Let the words of my mouth and the meditation of my heart be acceptable in your sight, O Lord, my rock and my redeemer."},
+{ref:"Matthew 5:16",text:"Let your light shine before men, that they may see your good works and glorify your Father who is in heaven."},
+{ref:"1 Thessalonians 5:16–18",text:"Always rejoice. Pray without ceasing. In everything give thanks, for this is the will of God in Christ Jesus toward you."},
+{ref:"Psalm 16:8",text:"I have set the Lord always before me. Because he is at my right hand, I shall not be moved."}
+];
+const STOP=new Set(["the","and","for","that","this","with","shall","will","your","you","not","but","his","her","who","are","was","were","them","they","have","has","from","unto","into","upon","all","may","let","our","out","can","which","what","when","does","did","been","also","yes","among"]);
+const $=id=>document.getElementById(id);
+const screens=["setup","night","ring","won"];
+function show(s){screens.forEach(x=>$(x).classList.toggle("on",x===s));}
+function toast(m,ms=3200){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),ms);}
+const store={get k(){return JSON.parse(localStorage.getItem("firstword")||"{}");},set(o){localStorage.setItem("firstword",JSON.stringify({...this.k,...o}));}};
+const dayKey=d=>d.toISOString().slice(0,10);
+function verseFor(d){const start=new Date(d.getFullYear(),0,0);const doy=Math.floor((d-start)/86400000);return VERSES[doy%VERSES.length];}
+
+/* ================= AUDIO (all synthesized — no files) ================= */
+let ctx=null,master=null,alarmTimer=null,ringing=false;
+function audioInit(){if(ctx)return;ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+  // silent keep-alive so iOS keeps the context warm all night
+  const o=ctx.createOscillator(),g=ctx.createGain();g.gain.value=0.0001;o.connect(g);g.connect(ctx.destination);o.start();}
+function bell(freq,when,dur,vol){const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=freq;
+  g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(vol,when+0.02);g.gain.exponentialRampToValueAtTime(0.001,when+dur);
+  o.connect(g);g.connect(master);o.start(when);o.stop(when+dur+0.05);}
+function startAlarmSound(){if(ringing)return;ringing=true;ctx.resume();let vol=0.25;master.gain.setValueAtTime(vol,ctx.currentTime);
+  const loop=()=>{if(!ringing)return;const t=ctx.currentTime;bell(880,t,0.9,0.9);bell(1174.7,t+0.28,0.9,0.7);bell(659.3,t+0.6,1.1,0.5);
+    vol=Math.min(1,vol+0.035);if(!micOpen)master.gain.linearRampToValueAtTime(vol,t+1);
+    if(navigator.vibrate)navigator.vibrate([300,120,300]);alarmTimer=setTimeout(loop,1300);};
+  loop();}
+function duckAlarm(on){if(!ctx)return;master.gain.linearRampToValueAtTime(on?0.10:0.8,ctx.currentTime+0.25);}
+function stopAlarmSound(){ringing=false;clearTimeout(alarmTimer);if(master)master.gain.linearRampToValueAtTime(0.0001,ctx.currentTime+0.4);if(navigator.vibrate)navigator.vibrate(0);}
+function victorySound(){const t=ctx.currentTime+0.1;master.gain.setValueAtTime(0.7,t);[523.25,659.25,783.99,1046.5].forEach((f,i)=>bell(f,t+i*0.16,1.6,0.6));}
+
+/* ================= WAKE LOCK ================= */
+let wakeLock=null;
+async function lockScreen(){try{if("wakeLock" in navigator){wakeLock=await navigator.wakeLock.request("screen");}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&(state==="night"||state==="ring"))lockScreen();});
+
+/* ================= STATE ================= */
+let state="setup",target=null,fired=false,verse=null,micOpen=false,attempts=0,rec=null,heardBag="";
+const params=new URLSearchParams(location.search);
+const DEV=params.has("dev");
+
+function initSetup(){const s=store.k;if(s.time)$("timeInput").value=s.time;
+  $("streakLine").innerHTML=s.streak?("Current streak: <b>"+s.streak+"</b> morning"+(s.streak>1?"s":"")+" 🔥"):"Night one. Tomorrow, the Word goes first.";}
+function fmt(d){let h=d.getHours(),m=d.getMinutes(),ap=h>=12?"PM":"AM";h=h%12||12;return h+":"+String(m).padStart(2,"0")+" "+ap;}
+
+async function arm(seconds){audioInit();ctx.resume();
+  if(!DEV){try{const st=await navigator.mediaDevices.getUserMedia({audio:true});st.getTracks().forEach(t=>t.stop());}
+    catch(e){toast("⚠️ Mic blocked — you'll get honor mode instead of voice check. Allow the mic for the real thing.",5000);}}
+  await lockScreen();
+  const now=new Date();
+  if(seconds){target=new Date(now.getTime()+seconds*1000);}
+  else{const [h,m]=$("timeInput").value.split(":").map(Number);store.set({time:$("timeInput").value});
+    target=new Date(now);target.setHours(h,m,0,0);if(target<=now)target.setDate(target.getDate()+1);}
+  fired=false;verse=verseFor(target);state="night";show("night");
+  $("ntarget").textContent=fmt(target);tickNight();
+  toast(seconds?("Test armed — fires in "+seconds+"s. Volume up!"):("Armed for "+fmt(target)+". Plug in, leave it face-up. Sleep well."),4200);}
+
+let nightInt=null;
+function tickNight(){clearInterval(nightInt);const up=()=>{$("nclock").textContent=fmt(new Date());
+    if(!fired&&new Date()>=target){fired=true;fire();}};up();nightInt=setInterval(up,1000);}
+
+let tapCount=0;
+$("night").addEventListener("click",()=>{tapCount++;setTimeout(()=>tapCount=0,600);
+  if(tapCount>=2){clearInterval(nightInt);state="setup";show("setup");toast("Disarmed.");}});
+
+function fire(){clearInterval(nightInt);state="ring";show("ring");attempts=0;heardBag="";
+  $("vref").textContent=verse.ref+"  ·  WEB";renderVerse();$("transcript").textContent="";$("meterFill").style.width="0%";$("tries").textContent="";
+  startAlarmSound();lockScreen();
+  if(DEV){setTimeout(()=>{heardBag=verse.text.toLowerCase();scoreAndRender(true);},params.get("dev")==="ring"?999999:5000);}}
+
+function words(t){return t.toLowerCase().replace(/[^a-z\s]/g," ").split(/\s+/).filter(w=>w.length>=3&&!STOP.has(w));}
+function renderVerse(){const heard=new Set(words(heardBag));
+  $("vtext").innerHTML=verse.text.split(" ").map(w=>{const c=w.toLowerCase().replace(/[^a-z]/g,"");
+    return (c.length>=3&&!STOP.has(c)&&heard.has(c))?('<span class="hit">'+w+"</span>"):w;}).join(" ");}
+function scoreAndRender(simulated){const need=[...new Set(words(verse.text))];const heard=new Set(words(heardBag));
+  const hitCount=need.filter(w=>heard.has(w)).length;const cov=hitCount/need.length;
+  renderVerse();$("meterFill").style.width=Math.round(cov*100)+"%";
+  const threshold=attempts>=2?0.4:0.6;
+  if(cov>=threshold){win(simulated?"simulated":"voice");}
+  return cov;}
+
+function startListening(){attempts++;$("tries").textContent="Attempt "+attempts+(attempts>=3?" · grace threshold active":"");
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){honorMode();return;}
+  try{rec=new SR();}catch(e){honorMode();return;}
+  rec.lang="en-US";rec.continuous=true;rec.interimResults=true;micOpen=true;duckAlarm(true);
+  $("ringState").textContent="🎤 Listening — read the verse";
+  rec.onresult=e=>{let all="";for(let i=0;i<e.results.length;i++)all+=" "+e.results[i][0].transcript;
+    heardBag=all;$("transcript").textContent="“"+all.trim().slice(-140)+"”";scoreAndRender(false);};
+  rec.onerror=e=>{micOpen=false;duckAlarm(false);if(e.error==="not-allowed"||e.error==="service-not-allowed"){honorMode();}
+    else{$("ringState").textContent="⏰ Mic hiccup — tap to try again";}};
+  rec.onend=()=>{micOpen=false;if(state==="ring"){duckAlarm(false);$("ringState").textContent="⏰ Rise — read to silence";}};
+  try{rec.start();}catch(e){honorMode();}}
+
+function honorMode(){$("ringState").textContent="🙏 Honor mode — HOLD the button while you read the whole verse aloud";
+  const b=$("micbtn");b.textContent="HOLD & read aloud (8s)";let hold=null,prog=0;
+  const down=()=>{prog=0;hold=setInterval(()=>{prog+=0.1;$("meterFill").style.width=Math.min(100,prog/8*100)+"%";if(prog>=8){clearInterval(hold);win("honor");}},100);};
+  const up=()=>clearInterval(hold);
+  b.onpointerdown=down;b.onpointerup=up;b.onpointerleave=up;b.onclick=null;}
+
+$("micbtn").addEventListener("click",()=>{if(state==="ring"&&!micOpen)startListening();});
+
+/* grace escape: hold the tiny cross 10s */
+(()=>{let h=null,p=0;const g=$("graceBtn");
+  const down=()=>{p=0;h=setInterval(()=>{p+=0.1;if(p>=10){clearInterval(h);toast("Grace given. Tomorrow, read it. 🙏");win("grace");}},100);};
+  const up=()=>clearInterval(h);g.addEventListener("pointerdown",down);g.addEventListener("pointerup",up);g.addEventListener("pointerleave",up);})();
+
+function win(how){if(state!=="ring")return;state="won";try{rec&&rec.stop();}catch(e){}
+  stopAlarmSound();victorySound();show("won");
+  $("wonVerse").textContent="“"+verse.text+"” — "+verse.ref;
+  const s=store.k,today=dayKey(new Date());let streak=s.streak||0;
+  if(s.lastWin!==today){const y=new Date();y.setDate(y.getDate()-1);
+    streak=(s.lastWin===dayKey(y))?streak+1:1;store.set({streak,lastWin:today,lastHow:how});}
+  $("streakNum").textContent=streak;}
+
+$("doneBtn").addEventListener("click",()=>{state="setup";show("setup");initSetup();});
+$("armBtn").addEventListener("click",()=>arm(null));
+$("testBtn").addEventListener("click",()=>arm(15));
+
+initSetup();
+if(DEV){arm(3);} // headless verification path: ?dev=1 arms instantly, fires in 3s, self-reads at +5s
+</script>
+</body>
+</html>
