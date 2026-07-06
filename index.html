@@ -214,8 +214,11 @@ function renderVerse(){const heard=new Set(words(heardBag));
 function scoreAndRender(simulated){const need=[...new Set(words(verse.text))];const heard=new Set(words(heardBag));
   const hitCount=need.filter(w=>heard.has(w)).length;const cov=hitCount/need.length;
   renderVerse();$("meterFill").style.width=Math.round(cov*100)+"%";
-  const threshold=attempts>=2?0.4:0.6;
-  if(cov>=threshold){win(simulated?"simulated":"voice");}
+  // v0.2 (Jay's first field test): finish the verse — needs high coverage AND one of the
+  // verse's closing words, so the alarm can't die while you're mid-sentence.
+  const tail=words(verse.text).slice(-3);const tailHit=tail.some(w=>heard.has(w));
+  const pass=attempts>=3?(cov>=0.5):(cov>=0.75&&tailHit);
+  if(pass){win(simulated?"simulated":"voice");}
   return cov;}
 
 function startListening(){attempts++;$("tries").textContent="Attempt "+attempts+(attempts>=3?" · grace threshold active":"");
