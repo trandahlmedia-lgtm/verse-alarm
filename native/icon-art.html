@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0}
+body{width:1024px;height:1024px;overflow:hidden;background:#0A0A0B}
+.wrap{position:relative;width:1024px;height:1024px;background:
+  radial-gradient(ellipse 980px 640px at 512px 820px, rgba(230,184,76,.34), rgba(230,184,76,.10) 45%, transparent 72%),
+  linear-gradient(180deg,#0A0A0B 0%,#0E0D10 55%,#141210 100%);}
+/* rays */
+.ray{position:absolute;left:509px;bottom:330px;width:4px;height:230px;transform-origin:bottom center;
+  background:linear-gradient(180deg,transparent,rgba(230,184,76,.7));border-radius:3px}
+/* sun half-disc */
+.sun{position:absolute;left:312px;bottom:130px;width:400px;height:200px;border-radius:400px 400px 0 0;
+  background:linear-gradient(180deg,#F1CE7E,#E6B84C 60%,#C99A34);box-shadow:0 0 150px 30px rgba(230,184,76,.45)}
+/* horizon */
+.horizon{position:absolute;left:64px;bottom:122px;width:896px;height:9px;border-radius:5px;
+  background:linear-gradient(90deg,transparent,#E6B84C 18%,#F1CE7E 50%,#E6B84C 82%,transparent)}
+/* cross rising from the sun */
+.cv{position:absolute;left:488px;bottom:310px;width:48px;height:410px;border-radius:24px;
+  background:linear-gradient(180deg,#F5E3AE,#E6B84C 70%,#D9A93E);box-shadow:0 0 70px 10px rgba(230,184,76,.5)}
+.ch{position:absolute;left:372px;bottom:576px;width:280px;height:48px;border-radius:24px;
+  background:linear-gradient(90deg,#D9A93E,#F5E3AE 50%,#D9A93E);box-shadow:0 0 70px 10px rgba(230,184,76,.5)}
+</style></head><body>
+<div class="wrap">
+  <div class="ray" style="transform:rotate(-56deg);height:170px"></div>
+  <div class="ray" style="transform:rotate(-32deg);height:215px"></div>
+  <div class="ray" style="transform:rotate(32deg);height:215px"></div>
+  <div class="ray" style="transform:rotate(56deg);height:170px"></div>
+  <div class="cv"></div><div class="ch"></div>
+  <div class="sun"></div>
+  <div class="horizon"></div>
+</div>
+</body></html>

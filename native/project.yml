@@ -1,0 +1,39 @@
+name: FirstWord
+options:
+  bundleIdPrefix: com.trandahlmedia
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+targets:
+  FirstWord:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: FirstWord/Sources
+      - path: FirstWord/Resources
+    info:
+      path: FirstWord/Info.plist
+      properties:
+        CFBundleDisplayName: First Word
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSAlarmKitUsageDescription: First Word uses a real alarm to wake you with a verse of Scripture each morning.
+        NSMicrophoneUsageDescription: The microphone hears you read the morning verse aloud so the alarm can be dismissed.
+        NSSpeechRecognitionUsageDescription: Speech recognition confirms the verse was read aloud. Nothing you say is stored or sent anywhere.
+        NSSupportsLiveActivities: true
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.trandahlmedia.firstword
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_STRICT_CONCURRENCY: minimal
