@@ -46,6 +46,10 @@ input[type=time]{background:#131316;border:1px solid rgba(245,242,234,.15);borde
 .meter i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#C9952B);border-radius:99px;transition:width .25s;}
 .tries{color:var(--faint);font-size:12px;margin-top:10px;}
 .grace{position:fixed;bottom:22px;color:rgba(245,242,234,.18);font-size:11.5px;padding:10px;}
+.seal{margin-top:16px;color:var(--dim);font-size:14px;}
+.seal b{color:var(--gold);font-family:Georgia,serif;letter-spacing:.04em;}
+.seal.ready{animation:pulse 1.1s ease-in-out infinite;color:var(--gold);}
+.ver{position:fixed;bottom:10px;right:14px;color:rgba(245,242,234,.18);font-size:11px;}
 
 /* WON */
 #won{background:radial-gradient(circle at 50% 30%,#1d2a14 0%,#0A0A0B 70%);}
@@ -70,6 +74,7 @@ input[type=time]{background:#131316;border:1px solid rgba(245,242,234,.15);borde
   <button class="btn ghost" id="testBtn">⚡ 15-second test</button>
   <div class="hint">Before bed: plug the phone in, arm it, and leave it <b>face-up with this page open</b> — the screen stays on, dimmed. Silent switch OFF, volume up.</div>
   <div class="streakline" id="streakLine"></div>
+  <div class="ver">First Word v0.3</div>
 </div>
 
 <!-- NIGHT -->
@@ -84,6 +89,7 @@ input[type=time]{background:#131316;border:1px solid rgba(245,242,234,.15);borde
   <div class="sunrise" id="ringState">⏰ Rise — read to silence</div>
   <div class="vref" id="vref"></div>
   <div class="vtext" id="vtext"></div>
+  <div class="seal" id="sealLine">Read it all… then seal it: <b>“Amen.”</b></div>
   <button class="btn" id="micbtn">🎤 I'm up — read it aloud</button>
   <div class="transcript" id="transcript"></div>
   <div class="meter"><i id="meterFill"></i></div>
@@ -203,9 +209,9 @@ $("night").addEventListener("click",()=>{tapCount++;setTimeout(()=>tapCount=0,60
   if(tapCount>=2){clearInterval(nightInt);state="setup";show("setup");toast("Disarmed.");}});
 
 function fire(){clearInterval(nightInt);state="ring";show("ring");attempts=0;heardBag="";
-  $("vref").textContent=verse.ref+"  ·  WEB";renderVerse();$("transcript").textContent="";$("meterFill").style.width="0%";$("tries").textContent="";
+  $("vref").textContent=verse.ref+"  ·  WEB";renderVerse();$("transcript").textContent="";$("meterFill").style.width="0%";$("tries").textContent="";$("sealLine").classList.remove("ready");
   startAlarmSound();lockScreen();
-  if(DEV){setTimeout(()=>{heardBag=verse.text.toLowerCase();scoreAndRender(true);},params.get("dev")==="ring"?999999:5000);}}
+  if(DEV){setTimeout(()=>{heardBag=verse.text.toLowerCase()+" amen";scoreAndRender(true);},params.get("dev")==="ring"?999999:5000);}}
 
 function words(t){return t.toLowerCase().replace(/[^a-z\s]/g," ").split(/\s+/).filter(w=>w.length>=3&&!STOP.has(w));}
 function renderVerse(){const heard=new Set(words(heardBag));
@@ -214,11 +220,12 @@ function renderVerse(){const heard=new Set(words(heardBag));
 function scoreAndRender(simulated){const need=[...new Set(words(verse.text))];const heard=new Set(words(heardBag));
   const hitCount=need.filter(w=>heard.has(w)).length;const cov=hitCount/need.length;
   renderVerse();$("meterFill").style.width=Math.round(cov*100)+"%";
-  // v0.2 (Jay's first field test): finish the verse — needs high coverage AND one of the
-  // verse's closing words, so the alarm can't die while you're mid-sentence.
-  const tail=words(verse.text).slice(-3);const tailHit=tail.some(w=>heard.has(w));
-  const pass=attempts>=3?(cov>=0.5):(cov>=0.75&&tailHit);
-  if(pass){win(simulated?"simulated":"voice");}
+  // v0.3 (Jay's fix): the dismissal is sealed with "Amen" — a word no verse in the bank
+  // contains, so the alarm cannot die mid-verse. Read enough of it, then say Amen.
+  const amen=heard.has("amen");
+  const covNeeded=attempts>=3?0.5:0.7;
+  $("sealLine").classList.toggle("ready",cov>=covNeeded&&!amen);
+  if(cov>=covNeeded&&amen){win(simulated?"simulated":"voice");}
   return cov;}
 
 function startListening(){attempts++;$("tries").textContent="Attempt "+attempts+(attempts>=3?" · grace threshold active":"");
