@@ -13,8 +13,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Compiles against the simulator SDK — no signing, no Apple account needed.
+  # This is the fast feedback loop that proves the Swift is sound.
+  compile:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: native
+        run: xcodegen generate
+
+      - name: Build (unsigned, simulator)
+        run: |
+          xcodebuild build \
+            -project native/FirstWord.xcodeproj \
+            -scheme FirstWord \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify --renderer github-actions || \
+          xcodebuild build \
+            -project native/FirstWord.xcodeproj \
+            -scheme FirstWord \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
+
+  # Signs + uploads to TestFlight. Skips itself until the four secrets exist.
   build:
     runs-on: macos-26
+    needs: compile
+    if: ${{ vars.PIPELINE_ARMED == 'true' }}
     timeout-minutes: 45
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
