@@ -23,6 +23,10 @@ final class SpeechGate: ObservableObject {
     private let engine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
+    private var tapInstalled = false
+    private var wantsListening = false
+    private var isStarting = false
+    private var restartTask: Task<Void, Never>?
     private var won = false
 
     // Same STOP list as the web app.
@@ -45,13 +49,19 @@ final class SpeechGate: ObservableObject {
     var sealReady: Bool { coverage >= coverageNeeded && !amenHeard }
 
     func begin(verse: Verse) async {
+        guard !wantsListening && !isStarting else { return }
+        isStarting = true
+        defer { isStarting = false }
+
         needed = Array(Set(Self.keywords(in: verse.text)))
         won = false
+        micDenied = false
+        wantsListening = true
 
         let speechOK = await requestSpeechAuth()
         let micOK = await AVAudioApplication.requestRecordPermission()
-        guard speechOK, micOK else {
-            micDenied = true
+        guard wantsListening, speechOK, micOK else {
+            markMicUnavailable()
             return
         }
         startListening()
@@ -66,13 +76,15 @@ final class SpeechGate: ObservableObject {
     }
 
     private func startListening() {
-        guard !won else { return }
-        stopListening()
+        guard wantsListening, !won, !listening else { return }
+        restartTask?.cancel()
+        restartTask = nil
+        tearDownAudio()
 
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default,
-                                    options: [.duckOthers, .defaultToSpeaker, .allowBluetoothA2DP])
+                                    options: [.duckOthers, .defaultToSpeaker, .allowBluetooth])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 
             let request = SFSpeechAudioBufferRecognitionRequest()
@@ -84,10 +96,14 @@ final class SpeechGate: ObservableObject {
 
             let input = engine.inputNode
             let format = input.outputFormat(forBus: 0)
-            input.removeTap(onBus: 0)
+            guard format.sampleRate > 0, format.channelCount > 0 else {
+                markMicUnavailable()
+                return
+            }
             input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
                 request.append(buffer)
             }
+            tapInstalled = true
             engine.prepare()
             try engine.start()
             listening = true
@@ -98,7 +114,7 @@ final class SpeechGate: ObservableObject {
                     if let result {
                         self.process(result.bestTranscription.formattedString)
                     }
-                    if error != nil || (result?.isFinal ?? false) {
+                    if self.wantsListening, error != nil || (result?.isFinal ?? false) {
                         // Recognition cycles end on pauses — count an attempt and restart.
                         self.attempts += 1
                         self.restartSoon()
@@ -106,18 +122,25 @@ final class SpeechGate: ObservableObject {
                 }
             }
         } catch {
-            attempts += 1
-            restartSoon()
+            markMicUnavailable()
         }
     }
 
     private func restartSoon() {
-        guard !won else { return }
+        guard wantsListening, !won else { return }
         listening = false
-        Task { @MainActor [weak self] in
+        restartTask?.cancel()
+        restartTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
             self?.startListening()
         }
+    }
+
+    private func markMicUnavailable() {
+        wantsListening = false
+        micDenied = true
+        tearDownAudio()
     }
 
     private func process(_ transcript: String) {
@@ -143,12 +166,22 @@ final class SpeechGate: ObservableObject {
     }
 
     func stopListening() {
+        wantsListening = false
+        restartTask?.cancel()
+        restartTask = nil
+        tearDownAudio()
+    }
+
+    private func tearDownAudio() {
         task?.cancel()
         task = nil
         request?.endAudio()
         request = nil
         if engine.isRunning { engine.stop() }
-        engine.inputNode.removeTap(onBus: 0)
+        if tapInstalled {
+            engine.inputNode.removeTap(onBus: 0)
+            tapInstalled = false
+        }
         listening = false
     }
 }

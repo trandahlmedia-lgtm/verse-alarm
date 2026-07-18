@@ -70,7 +70,7 @@ final class AlarmService: ObservableObject {
             tintColor: Theme.gold
         )
 
-        let configuration = AlarmManager.AlarmConfiguration(
+        let configuration = AlarmManager.AlarmConfiguration.alarm(
             schedule: schedule,
             attributes: attributes,
             secondaryIntent: OpenRingIntent(),
